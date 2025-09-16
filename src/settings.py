@@ -10,7 +10,9 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import os
 from pathlib import Path
+from decouple import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -37,14 +39,47 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+
+    "rest_framework",
+    "django_filters",
+    "drf_standardized_errors",
+    "rest_framework_simplejwt.token_blacklist",
+    "rest_framework.authtoken",
+    "drf_spectacular",
+    'corsheaders',
+
+
+    "src.apps.auth",
+
+    'django.contrib.sites',  # required for django-allauth
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
+    
 ]
 
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",  # React
+    "http://127.0.0.1:5500",  # plain JS/HTML
+    "https://yourfrontend.com",
+]
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_HEADERS = [
+    "content-type",
+    "authorization",
+    "x-requested-with",
+]
+
+
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    'allauth.account.middleware.AccountMiddleware',
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -72,13 +107,52 @@ WSGI_APPLICATION = "src.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+USE_SQLITE = config("USE_SQLITE", default=True, cast=bool)
+if USE_SQLITE:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+            "OPTIONS": {
+                "timeout": 20,
+            },
+        }
     }
+else:
+    POSTGRES_DB = config("POSTGRES_DB", default="")
+    POSTGRES_USER = config("POSTGRES_USER", default="")
+    POSTGRES_PASSWORD = config("POSTGRES_PASSWORD", default="")
+    POSTGRES_HOST = config("POSTGRES_HOST", default="")
+    POSTGRES_PORT = config("POSTGRES_PORT", default="")
+
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql_psycopg2",
+            "NAME": POSTGRES_DB,
+            "USER": POSTGRES_USER,
+            "PASSWORD": POSTGRES_PASSWORD,
+            "HOST": POSTGRES_HOST,
+            "PORT": POSTGRES_PORT,
+        },
+    }
+
+REST_FRAMEWORK = {
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_FILTER_BACKENDS": ["django_filters.rest_framework.DjangoFilterBackend"],
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ),
+    "EXCEPTION_HANDLER": "drf_standardized_errors.handler.exception_handler",
 }
 
+DRF_STANDARDIZED_ERRORS = {"ENABLE_IN_DEBUG_FOR_UNHANDLED_EXCEPTIONS": True}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'My Project API',
+    'DESCRIPTION': 'API documentation for my project',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,  # Only needed if using /schema/
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
@@ -114,9 +188,100 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
+
+MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+MEDIA_URL = "media/"
 STATIC_URL = "static/"
+STATIC_ROOT = os.path.join(BASE_DIR, "static")
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+
+AUTH_USER_MODEL = "authentication.User"
+
+from datetime import timedelta
+# JWT Configuration
+ACCESS_TOKEN_LIFETIME = config("ACCESS_TOKEN_LIFETIME", default=60, cast=int)
+
+REFRESH_TOKEN_LIFETIME = config("REFRESH_TOKEN_LIFETIME", default=7, cast=int)
+
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=ACCESS_TOKEN_LIFETIME),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=REFRESH_TOKEN_LIFETIME),
+    "ROTATE_REFRESH_TOKENS": False,
+    "BLACKLIST_AFTER_ROTATION": False,
+    "UPDATE_LAST_LOGIN": False,
+    "ALGORITHM": "HS256",
+    "SIGNING_KEY": SECRET_KEY,
+    "VERIFYING_KEY": "",
+    "AUDIENCE": None,
+    "ISSUER": None,
+    "JSON_ENCODER": None,
+    "JWK_URL": None,
+    "LEEWAY": 0,
+    "AUTH_HEADER_TYPES": ("Bearer",),
+    "AUTH_HEADER_NAME": "HTTP_AUTHORIZATION",
+    "USER_ID_FIELD": "id",
+    "USER_ID_CLAIM": "user_id",
+    "USER_AUTHENTICATION_RULE": "rest_framework_simplejwt.authentication.default_user_authentication_rule",
+    "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
+    "TOKEN_TYPE_CLAIM": "token_type",
+    "TOKEN_USER_CLASS": "rest_framework_simplejwt.models.TokenUser",
+    "JTI_CLAIM": "jti",
+    "SLIDING_TOKEN_REFRESH_EXP_CLAIM": "refresh_exp",
+    "SLIDING_TOKEN_LIFETIME": timedelta(minutes=5),
+    "SLIDING_TOKEN_REFRESH_LIFETIME": timedelta(days=1),
+    "TOKEN_OBTAIN_SERIALIZER": "rest_framework_simplejwt.serializers.TokenObtainPairSerializer",
+    "TOKEN_REFRESH_SERIALIZER": "rest_framework_simplejwt.serializers.TokenRefreshSerializer",
+    "TOKEN_VERIFY_SERIALIZER": "rest_framework_simplejwt.serializers.TokenVerifySerializer",
+    "TOKEN_BLACKLIST_SERIALIZER": "rest_framework_simplejwt.serializers.TokenBlacklistSerializer",
+    "SLIDING_TOKEN_OBTAIN_SERIALIZER": "rest_framework_simplejwt.serializers.TokenObtainSlidingSerializer",
+    "SLIDING_TOKEN_REFRESH_SERIALIZER": "rest_framework_simplejwt.serializers.TokenRefreshSlidingSerializer",
+}
+
+
+
+
+APPEND_SLASH = True
+
+OTP_VALID_PERIOD = config("OTP_VALID_PERIOD", default=300, cast=int)  # in seconds
+
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = config("EMAIL_HOST", default="smtp.gmail.com")
+EMAIL_PORT = config("EMAIL_PORT", default=587, cast=int)
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = config("EMAIL_HOST_USER", default="")
+EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", default="")
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+
+AUTHENTICATION_BACKENDS = [
+    # Needed to login by username in Django admin, regardless of `allauth`
+    'django.contrib.auth.backends.ModelBackend',
+
+    # `allauth` specific authentication methods, such as login by email
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
+
+
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'SCOPE': [
+            'profile',
+            'email',
+        ],
+        'AUTH_PARAMS': {
+            'access_type': 'online',
+        },
+        'OAUTH_PKCE_ENABLED': True,
+    }
+}
+
+SITE_ID = 1
+ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_AUTHENTICATION_METHOD = 'email'

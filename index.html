@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Google OAuth JWT Test</title>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+  <h2>Login with Google</h2>
+  <div id="g_id_onload"
+       data-client_id="321288170457-gkiml23cbv686i94rcg544qom133oila.apps.googleusercontent.com"
+       data-callback="handleCredentialResponse"      >
+  </div>
+  <div class="g_id_signin"></div>
+  <div>
+    <button onclick="fetchUserDetails()">Fetch User Details</button>
+  </div>
+
+  <script>
+    async function handleCredentialResponse(response) {
+      // response.credential is the Google ID token
+      const id_token = response.credential;
+
+      try {
+        // 1️⃣ Send ID token to backend to get your JWT
+        const res = await fetch('http://127.0.0.1:8000/auth/google/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id_token })
+        });
+
+        const data = await res.json();
+        console.log('JWT Response:', data);
+
+        // Save JWT tokens locally
+        localStorage.setItem('access', data.access);
+        localStorage.setItem('refresh', data.refresh);
+
+        alert(`Logged in as ${data.user.username}, JWT stored.`);
+
+        // 2️⃣ Immediately fetch user details using JWT
+        fetchUserDetails();
+
+      } catch (err) {
+        console.error('Login failed:', err);
+      }
+    }
+
+    
+  </script>
+</body>
+</html>
