@@ -33,6 +33,8 @@ ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="").split(",")
 # Application definition
 
 INSTALLED_APPS = [
+    'jazzmin',
+
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -297,3 +299,60 @@ SITE_ID = 1
 ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_AUTHENTICATION_METHOD = 'email'
+
+
+# settings.py
+
+JAZZMIN_SETTINGS = {
+    "site_title": "🚀 MyProject Admin",
+    "site_header": "MyProject Dashboard",
+    # "site_logo": "https://i.pravatar.cc/150?img=3", 
+    "site_brand": "MyProject",
+    "welcome_sign": "Welcome to MyProject Management",
+    "copyright": "MyProject © 2025",
+    "search_model": "auth.User",
+    "user_avatar": "https://i.pravatar.cc/150?img=3",  # optional avatar in navbar
+
+    # UI tweaks
+    "show_sidebar": True,
+    "navigation_expanded": True,
+    "topmenu_links": [
+        {"name": "Home", "url": "/", "new_window": False},
+        {"name": "Docs", "url": "https://docs.myproject.com", "new_window": True},
+        {"model": "auth.user"},
+    ],
+
+    # Icons for apps and models
+    "icons": {
+        "auth": "fas fa-users-cog",
+        "auth.user": "fas fa-user",
+        "auth.group": "fas fa-users",
+        "myapp": "fas fa-cogs",
+        "myapp.mymodel": "fas fa-database",
+    },
+
+    # Ordering
+    "order_with_respect_to": ["auth", "myapp"],
+
+    # Color mode
+    "show_ui_builder": True,
+    "custom_css": "css/admin_custom.css",
+}
+
+JAZZMIN_UI_TWEAKS = {
+    "navbar_small_text": False,
+    "footer_small_text": True,
+    "body_small_text": False,
+    "brand_small_text": False,
+    "accent": "accent-primary",
+    "navbar": "navbar-dark navbar-primary",  # dark navbar
+    "no_navbar_border": False,
+    "navbar_fixed": True,
+    "layout_boxed": False,
+    "footer_fixed": True,
+    "body_custom_classes": "bg-gradient-dark",  # premium dark gradient background
+    "brand_classes": "text-white font-weight-bold",
+    "button_classes": "btn-outline-primary",
+    "form_label_classes": "text-light",
+    "form_field_classes": "form-control form-control-sm",
+}
