@@ -37,27 +37,40 @@ from decouple import config
 
 User = get_user_model()
 
-class GoogleAuthView(APIView):
-    
+
+
+
+
+import requests
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from django.contrib.auth import get_user_model
+from rest_framework_simplejwt.tokens import RefreshToken
+
+User = get_user_model()
+
+class FacebookAuthView(APIView):
+
     def post(self, request):
-        id_token_from_frontend = request.data.get('id_token')
+        access_token = request.data.get('access_token')
 
-        if not id_token_from_frontend:
-            return Response({"error": "ID token is required"}, status=status.HTTP_400_BAD_REQUEST)
+        if not access_token:
+            return Response({"error": "Access token is required"}, status=status.HTTP_400_BAD_REQUEST)
 
-        try:
-            # Verify the token
-            idinfo = google_id_token.verify_oauth2_token(
-                id_token_from_frontend,
-                requests.Request(),
-                config("GOOGLE_CLIENT_ID")
-            )
-        except ValueError:
-            return Response({"error": "Invalid ID token"}, status=status.HTTP_400_BAD_REQUEST)
+        # Verify token and get user info from Facebook Graph API
+        graph_url = f"https://graph.facebook.com/me?fields=id,name,email&access_token={access_token}"
+        resp = requests.get(graph_url)
 
-        # Get user info
-        email = idinfo.get('email')
-        name = idinfo.get('name')
+        if resp.status_code != 200:
+            return Response({"error": "Invalid Facebook token"}, status=status.HTTP_400_BAD_REQUEST)
+
+        data = resp.json()
+        email = data.get('email')
+        name = data.get('name')
+
+        if not email:
+            return Response({"error": "Email permission is required"}, status=status.HTTP_400_BAD_REQUEST)
 
         # Get or create the user
         user, created = User.objects.get_or_create(
@@ -77,6 +90,83 @@ class GoogleAuthView(APIView):
             }
         })
 
+
+
+# views.py
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from django.conf import settings
+from google.oauth2 import id_token
+from google.auth.transport import requests
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+class GoogleAuthView(APIView):
+    """
+    Login or register a user via Google OAuth2 ID token.
+    Returns JWT tokens for authenticated API requests.
+    """
+
+    def post(self, request):
+        id_token_from_frontend = request.data.get("id_token")
+
+        if not id_token_from_frontend:
+            return Response(
+                {"error": "ID token is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            # Verify Google ID token
+            idinfo = id_token.verify_oauth2_token(
+                id_token_from_frontend,
+                requests.Request(),
+                config('GOOGLE_CLIENT_ID')  # read from settings or .env
+            )
+        except ValueError as e:
+            return Response(
+                {"error": "Invalid ID token", "details": str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            return Response(
+                {"error": "Google token verification failed", "details": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+        # Extract user info from token
+        email = idinfo.get("email")
+        name = idinfo.get("name") or ""
+
+        if not email:
+            return Response(
+                {"error": "Email not provided by Google"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Get or create Django user
+        user, created = User.objects.get_or_create(
+            email=email,
+            defaults={"username": email.split("@")[0], "first_name": name}
+        )
+
+        # Generate JWT tokens
+        refresh = RefreshToken.for_user(user)
+        return Response(
+            {
+                "refresh": str(refresh),
+                "access": str(refresh.access_token),
+                "user": {
+                    "id": user.id,
+                    "email": user.email,
+                    "username": user.username,
+                },
+            },
+            status=status.HTTP_200_OK
+        )
 
 class UserRegisterView(generics.CreateAPIView):
     serializer_class = UserRegisterSerializer

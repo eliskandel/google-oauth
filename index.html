@@ -2,27 +2,81 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Google OAuth JWT Test</title>
+  <title>Google OAuth JWT Login</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f2f5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .container {
+      background: #fff;
+      padding: 40px;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      text-align: center;
+      width: 350px;
+    }
+
+    h2 {
+      margin-bottom: 20px;
+    }
+
+    #user-info {
+      margin-top: 20px;
+      display: none;
+      text-align: left;
+    }
+
+    button {
+      margin-top: 15px;
+      padding: 10px 20px;
+      border: none;
+      background: #4285f4;
+      color: #fff;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #3367d6;
+    }
+  </style>
 </head>
 <body>
-  <h2>Login with Google</h2>
-  <div id="g_id_onload"
-       data-client_id="321288170457-gkiml23cbv686i94rcg544qom133oila.apps.googleusercontent.com"
-       data-callback="handleCredentialResponse"      >
-  </div>
-  <div class="g_id_signin"></div>
-  <div>
-    <button onclick="fetchUserDetails()">Fetch User Details</button>
+  <div class="container">
+    <h2>Login with Google</h2>
+
+    <!-- Google Sign-in -->
+    <div id="g_id_onload"
+         data-client_id="321288170457-gkiml23cbv686i94rcg544qom133oila.apps.googleusercontent.com"
+         data-callback="handleCredentialResponse">
+    </div>
+    <div class="g_id_signin"></div>
+
+    <!-- User info -->
+    <div id="user-info">
+      <h3>User Info</h3>
+      <p><strong>ID:</strong> <span id="user-id"></span></p>
+      <p><strong>Username:</strong> <span id="user-username"></span></p>
+      <p><strong>Email:</strong> <span id="user-email"></span></p>
+      <button onclick="logout()">Logout</button>
+    </div>
   </div>
 
   <script>
     async function handleCredentialResponse(response) {
-      // response.credential is the Google ID token
       const id_token = response.credential;
 
       try {
-        // 1️⃣ Send ID token to backend to get your JWT
+        // Send ID token to backend to get JWT
         const res = await fetch('http://127.0.0.1:8000/auth/google/', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -30,23 +84,34 @@
         });
 
         const data = await res.json();
-        console.log('JWT Response:', data);
 
         // Save JWT tokens locally
         localStorage.setItem('access', data.access);
         localStorage.setItem('refresh', data.refresh);
 
-        alert(`Logged in as ${data.user.username}, JWT stored.`);
-
-        // 2️⃣ Immediately fetch user details using JWT
-        fetchUserDetails();
+        // Display user info
+        showUserInfo(data.user);
 
       } catch (err) {
         console.error('Login failed:', err);
+        alert('Login failed. Check console.');
       }
     }
 
-    
+    function showUserInfo(user) {
+      document.getElementById('user-id').textContent = user.id;
+      document.getElementById('user-username').textContent = user.username;
+      document.getElementById('user-email').textContent = user.email;
+      document.getElementById('user-info').style.display = 'block';
+    }
+
+    function logout() {
+      // Clear tokens
+      localStorage.removeItem('access');
+      localStorage.removeItem('refresh');
+      document.getElementById('user-info').style.display = 'none';
+      alert('Logged out successfully.');
+    }
   </script>
 </body>
 </html>

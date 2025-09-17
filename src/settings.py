@@ -56,6 +56,8 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
+
+    'allauth.socialaccount.providers.facebook',
     
 ]
 
@@ -264,19 +266,32 @@ AUTHENTICATION_BACKENDS = [
     'allauth.account.auth_backends.AuthenticationBackend',
 ]
 
+from decouple import config
 
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
-        'SCOPE': [
-            'profile',
-            'email',
-        ],
-        'AUTH_PARAMS': {
-            'access_type': 'online',
+        'APP': {
+            'client_id': config('GOOGLE_CLIENT_ID'),
+            'secret': config('GOOGLE_CLIENT_SECRET'),
+            'key': ''
         },
+        'SCOPE': ['profile', 'email'],
+        'AUTH_PARAMS': {'access_type': 'online'},
         'OAUTH_PKCE_ENABLED': True,
-    }
+    },
+    # 'facebook': {
+    #     'APP': {
+    #         'client_id': config('FACEBOOK_CLIENT_ID'),
+    #         'secret': config('FACEBOOK_CLIENT_SECRET'),
+    #         'key': ''
+    #     },
+    #     'METHOD': 'oauth2',
+    #     'SCOPE': ['email', 'public_profile'],
+    #     'FIELDS': ['id', 'email', 'name', 'first_name', 'last_name', 'picture.type(large)'],
+    #     'VERIFIED_EMAIL': False,
+    # }
 }
+
 
 SITE_ID = 1
 ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
