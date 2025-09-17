@@ -22,12 +22,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-(11u5g6-l#h*@f*dw3b_dwpl4thshk_2xs7y)5bzbkx_ahqq(m"
+SECRET_KEY = config('SECRET_KEY', default='django-insecure-(11u5g6-l#h*@f*dw3b_dwpl4thshk_2xs7y)5bzbkx_ahqq(m')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = config('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="").split(",")
 
 
 # Application definition
@@ -59,11 +59,8 @@ INSTALLED_APPS = [
     
 ]
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",  # React
-    "http://127.0.0.1:5500",  # plain JS/HTML
-    "https://yourfrontend.com",
-]
+CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default="http://localhost:3000,http://127.0.0.1:5500").split(',') 
+
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_HEADERS = [
     "content-type",

@@ -17,7 +17,6 @@ from .serializers import (
     ForgotPasswordSerializer,
     VerifyForgotPasswordSerializer,
     ChangeForgotPasswordSerializer,
-    # AddUserPermissionsSerializer,
     PermissionsSerializer,
     UserDetailSerializer,
 )
@@ -29,14 +28,12 @@ from src.apps.common.tasks import send_user_mail
 
 
 
-# users/views.py
+##oauthsetup
 from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import get_user_model
 from google.oauth2 import id_token as google_id_token
 from google.auth.transport import requests
+from decouple import config
 
 User = get_user_model()
 
@@ -53,7 +50,7 @@ class GoogleAuthView(APIView):
             idinfo = google_id_token.verify_oauth2_token(
                 id_token_from_frontend,
                 requests.Request(),
-                "321288170457-gkiml23cbv686i94rcg544qom133oila.apps.googleusercontent.com"  # replace with your Google client ID
+                config("GOOGLE_CLIENT_ID")
             )
         except ValueError:
             return Response({"error": "Invalid ID token"}, status=status.HTTP_400_BAD_REQUEST)
