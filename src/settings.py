@@ -34,6 +34,7 @@ ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="").split(",")
 
 INSTALLED_APPS = [
     'jazzmin',
+    'channels',
 
     "django.contrib.admin",
     "django.contrib.auth",
@@ -59,7 +60,7 @@ INSTALLED_APPS = [
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
 
-    'allauth.socialaccount.providers.facebook',
+    # 'allauth.socialaccount.providers.facebook',
     
 ]
 
@@ -80,7 +81,9 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+
     'allauth.account.middleware.AccountMiddleware',
+    
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -103,6 +106,8 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "src.wsgi.application"
+
+ASGI_APPLICATION = "src.asgi.application"
 
 
 # Database
@@ -245,7 +250,14 @@ SIMPLE_JWT = {
 }
 
 
-
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": ["redis://127.0.0.1:6379/0"],   # ✅ Correct
+        },
+    },
+}
 
 APPEND_SLASH = True
 

@@ -105,10 +105,7 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 class GoogleAuthView(APIView):
-    """
-    Login or register a user via Google OAuth2 ID token.
-    Returns JWT tokens for authenticated API requests.
-    """
+    
 
     def post(self, request):
         id_token_from_frontend = request.data.get("id_token")
@@ -124,7 +121,7 @@ class GoogleAuthView(APIView):
             idinfo = id_token.verify_oauth2_token(
                 id_token_from_frontend,
                 requests.Request(),
-                config('GOOGLE_CLIENT_ID')  # read from settings or .env
+                config('GOOGLE_CLIENT_ID')  
             )
         except ValueError as e:
             return Response(
@@ -137,7 +134,7 @@ class GoogleAuthView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
-        # Extract user info from token
+        
         email = idinfo.get("email")
         name = idinfo.get("name") or ""
 
@@ -153,7 +150,7 @@ class GoogleAuthView(APIView):
             defaults={"username": email.split("@")[0], "first_name": name}
         )
 
-        # Generate JWT tokens
+
         refresh = RefreshToken.for_user(user)
         return Response(
             {
@@ -174,7 +171,7 @@ class UserRegisterView(generics.CreateAPIView):
 
     def post(self, request, *args, **kwargs):
 
-        if request.data.get("role") in [Role.CLIENT, Role.STAFF, Role.ADMIN]:
+        if request.data.get("role") in [Role.STAFF, Role.ADMIN]:
             request.data["password"] = get_random_string(
                 length=8,
                 allowed_chars="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
@@ -185,7 +182,7 @@ class UserRegisterView(generics.CreateAPIView):
         serializer.save()
         headers = self.get_success_headers(serializer.data)
 
-        if request.data.get("role") in [Role.CLIENT, Role.STAFF, Role.ADMIN]:
+        if request.data.get("role") in [ Role.STAFF, Role.ADMIN]:
             send_user_mail.delay(
                 subject="Welcome to Our Platform",
                 recipients=[serializer.data["email"]],

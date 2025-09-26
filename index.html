@@ -82,6 +82,7 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id_token })
         });
+        console.log(res);
 
         const data = await res.json();
 

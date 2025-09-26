@@ -23,6 +23,7 @@ django-allauth==65.11.2
 django-celery-beat==2.8.1
 django-cors-headers==4.7.0
 django-filter==25.1
+django-jazzmin==3.0.1
 django-ratelimit==4.1.0
 django-timezone-field==7.1
 djangorestframework==3.16.0
