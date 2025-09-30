@@ -2,20 +2,17 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Google OAuth JWT Login</title>
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <title>Login / Signup</title>
   <style>
     body {
       font-family: Arial, sans-serif;
       background: #f0f2f5;
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
       height: 100vh;
       margin: 0;
     }
-
     .container {
       background: #fff;
       padding: 40px;
@@ -24,17 +21,13 @@
       text-align: center;
       width: 350px;
     }
-
-    h2 {
-      margin-bottom: 20px;
+    input {
+      width: 100%;
+      padding: 8px;
+      margin: 8px 0;
+      border-radius: 5px;
+      border: 1px solid #ccc;
     }
-
-    #user-info {
-      margin-top: 20px;
-      display: none;
-      text-align: left;
-    }
-
     button {
       margin-top: 15px;
       padding: 10px 20px;
@@ -44,74 +37,67 @@
       border-radius: 5px;
       cursor: pointer;
     }
-
-    button:hover {
-      background: #3367d6;
-    }
+    button:hover { background: #3367d6; }
   </style>
 </head>
 <body>
   <div class="container">
-    <h2>Login with Google</h2>
-
-    <!-- Google Sign-in -->
-    <div id="g_id_onload"
-         data-client_id="321288170457-gkiml23cbv686i94rcg544qom133oila.apps.googleusercontent.com"
-         data-callback="handleCredentialResponse">
-    </div>
-    <div class="g_id_signin"></div>
-
-    <!-- User info -->
-    <div id="user-info">
-      <h3>User Info</h3>
-      <p><strong>ID:</strong> <span id="user-id"></span></p>
-      <p><strong>Username:</strong> <span id="user-username"></span></p>
-      <p><strong>Email:</strong> <span id="user-email"></span></p>
-      <button onclick="logout()">Logout</button>
-    </div>
+    <h2>Login / Signup</h2>
+    <input type="text" id="username" placeholder="Username" />
+    <input type="password" id="password" placeholder="Password" />
+    <button onclick="login()">Login</button>
+    <button onclick="signup()">Signup</button>
   </div>
 
   <script>
-    async function handleCredentialResponse(response) {
-      const id_token = response.credential;
+    async function login() {
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value.trim();
+      if (!username || !password) return alert('Enter username and password');
 
       try {
-        // Send ID token to backend to get JWT
-        const res = await fetch('http://127.0.0.1:8000/auth/google/', {
+        const res = await fetch('http://127.0.0.1:8000/auth/login/', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id_token })
+          body: JSON.stringify({ username, password })
         });
-        console.log(res);
-
         const data = await res.json();
+        if (!res.ok) throw new Error(data.msg || 'Login failed');
 
-        // Save JWT tokens locally
         localStorage.setItem('access', data.access);
         localStorage.setItem('refresh', data.refresh);
+        localStorage.setItem('user', JSON.stringify(data.details));
 
-        // Display user info
-        showUserInfo(data.user);
-
+        window.location.href = 'room.html';
       } catch (err) {
-        console.error('Login failed:', err);
-        alert('Login failed. Check console.');
+        alert(err.message || 'Login failed');
+        console.error(err);
       }
     }
 
-    function showUserInfo(user) {
-      document.getElementById('user-id').textContent = user.id;
-      document.getElementById('user-username').textContent = user.username;
-      document.getElementById('user-email').textContent = user.email;
-      document.getElementById('user-info').style.display = 'block';
-    }
+    async function signup() {
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value.trim();
+      if (!username || !password) return alert('Enter username and password');
 
-    function logout() {
-      // Clear tokens
-      localStorage.removeItem('access');
-      localStorage.removeItem('refresh');
-      document.getElementById('user-info').style.display = 'none';
-      alert('Logged out successfully.');
+      try {
+        const res = await fetch('http://127.0.0.1:8000/auth/signup/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.msg || 'Signup failed');
+
+        localStorage.setItem('access', data.access);
+        localStorage.setItem('refresh', data.refresh);
+        localStorage.setItem('user', JSON.stringify(data.details));
+
+        window.location.href = 'room.html';
+      } catch (err) {
+        alert(err.message || 'Signup failed');
+        console.error(err);
+      }
     }
   </script>
 </body>
